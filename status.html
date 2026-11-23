@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Що працює — PrintFarm</title>
+<meta name="description" content="Чесний стан PrintFarm: що перевірено на діючій фермі, що реалізовано, але не перевірено на залізі, і відомі обмеження.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header"><div class="wrap">
+  <a class="logo" href="index.html">Print<span>Farm</span></a>
+  <nav class="nav">
+    <a href="index.html">Головна</a>
+    <a href="features.html">Можливості</a>
+    <a href="install.html">Встановлення</a>
+    <a href="maintenance.html">Обслуговування</a>
+    <a class="active" href="status.html">Що працює</a>
+    <a href="roadmap.html">Плани</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <h1>Що працює, а що ні</h1>
+  <p class="lead">PrintFarm щодня працює на фермі з принтерів Bambu Lab. Усе, що поза цим парком, описано тут
+    чесно: що перевірено, що лише реалізовано, і які є відомі обмеження.</p>
+  <p class="muted">Стан на листопад 2026, версія 0.46.</p>
+
+  <p><span class="tag ok">працює</span> перевірено на діючій фермі ·
+    <span class="tag warn">не перевірено</span> реалізовано, але без живого принтера ·
+    <span class="tag next">наступна версія</span> вже зроблено, вийде з найближчим оновленням ·
+    <span class="tag bad">немає</span> поки не підтримується</p>
+
+  <h2>Принтери</h2>
+  <div class="table"><table>
+    <tr><th>Принтер</th><th>Стан</th><th>Примітка</th></tr>
+    <tr><td>Bambu Lab X1 Carbon, X1E</td><td><span class="tag ok">працює</span></td><td>основний парк ферми; камера — через ffmpeg</td></tr>
+    <tr><td>Bambu Lab P2S</td><td><span class="tag ok">працює</span></td><td>див. відомі обмеження нижче</td></tr>
+    <tr><td>Bambu Lab A1</td><td><span class="tag ok">працює</span></td><td>див. відомі обмеження нижче</td></tr>
+    <tr><td>Bambu Lab X1, P1S, P1P, A1 Mini</td><td><span class="tag warn">не перевірено</span></td><td>той самий протокол, що в перевірених моделей, — найімовірніше працюють</td></tr>
+    <tr><td>Bambu Lab H2D, H2S</td><td><span class="tag warn">не перевірено</span></td><td>моделі є в реєстрі; особливості двох екструдерів H2D ще не враховано</td></tr>
+    <tr><td>Creality K1 / K1 Max, Qidi Q2</td><td><span class="tag warn">не перевірено</span></td><td>драйвер Klipper (Moonraker) є, на живому принтері не перевірено</td></tr>
+    <tr><td>Prusa CORE One</td><td><span class="tag warn">не перевірено</span></td><td>драйвер PrusaLink є, на живому принтері не перевірено</td></tr>
+  </table></div>
+  <div class="note info"><p>Маєте Klipper- чи Prusa-принтер і готові допомогти перевірити? Напишіть — для
+    налагодження потрібен журнал саме з такого принтера.</p></div>
+
+  <h2>Функції</h2>
+  <div class="table"><table>
+    <tr><th>Що</th><th>Стан</th></tr>
+    <tr><td>Дашборд, фільтри, стелажі, пошук</td><td><span class="tag ok">працює</span></td></tr>
+    <tr><td>Задачі: відправка на десятки принтерів групами</td><td><span class="tag ok">працює</span></td></tr>
+    <tr><td>Повтори з екрана принтера й друки поза задачами</td><td><span class="tag ok">працює</span> (окрім випадку A1 нижче)</td></tr>
+    <tr><td>Замовлення, клієнти, файли замовлення</td><td><span class="tag ok">працює</span></td></tr>
+    <tr><td>Аналітика й експорт у CSV</td><td><span class="tag ok">працює</span> (за даними слайсера, див. нижче)</td></tr>
+    <tr><td>Камери на вимогу й відеостіна</td><td><span class="tag ok">працює</span></td></tr>
+    <tr><td>Сповіщення в браузері</td><td><span class="tag ok">працює</span></td></tr>
+    <tr><td>Автоматичні бекапи бази</td><td><span class="tag ok">працює</span> (лише на тому самому диску)</td></tr>
+    <tr><td>Пошук принтерів, що змінили IP</td><td><span class="tag ok">працює</span></td></tr>
+    <tr><td>Причина паузи Bambu з кодом, текстом і кнопками принтера</td><td><span class="tag next">наступна версія</span></td></tr>
+    <tr><td>Сповіщення в Telegram</td><td><span class="tag bad">немає</span> — у планах</td></tr>
+    <tr><td>AMS (мультиколір)</td><td><span class="tag bad">немає</span> — філамент вказується вручну</td></tr>
+    <tr><td>Склад філаменту, облік котушок</td><td><span class="tag bad">немає</span> — у планах</td></tr>
+    <tr><td>Автоматична черга («друкуй на будь-якому вільному X1C»)</td><td><span class="tag bad">немає</span> — відправку запускає оператор</td></tr>
+    <tr><td>Мобільний застосунок, кабінет клієнта</td><td><span class="tag bad">немає</span></td></tr>
+    <tr><td>Інтерфейс англійською</td><td><span class="tag bad">немає</span> — лише українська</td></tr>
+  </table></div>
+
+  <h2>Встановлення</h2>
+  <div class="table"><table>
+    <tr><th>Система</th><th>Стан</th></tr>
+    <tr><td>Linux (Ubuntu / Debian, amd64), пакет .deb</td><td><span class="tag ok">працює</span> — так працює діюча ферма</td></tr>
+    <tr><td>Raspberry Pi 5</td><td><span class="tag bad">немає</span> — готується</td></tr>
+    <tr><td>Windows, macOS</td><td><span class="tag bad">немає</span> — у планах</td></tr>
+  </table></div>
+
+  <h2>Відомі обмеження</h2>
+  <h3>Bambu Lab</h3>
+  <ul>
+    <li><b>Запуск друку — лише в LAN Only + Developer Mode.</b> Це вимога прошивок Bambu, а не ферми. Без цього
+      ферма показує стан, але друк не запустить.</li>
+    <li><b>P2S: пауза через маркер пластини чи закінчення філаменту</b> зараз не показує причину, а «Відновити» з
+      ферми паузу не знімає — продовжувати доводиться з екрана принтера. <span class="tag next">наступна версія</span></li>
+    <li><b>Зупинку друку з екрана принтера</b> ферма записує як «помилка друку».</li>
+    <li><b>A1: повтор друку, запущений з екрана принтера</b>, може не зарахуватись до задачі.</li>
+    <li><b>P2S «забуває» друк</b>, коли переходить у режим очікування. Якщо зв'язок з ним пропав до кінця друку і
+      повернувся вже після, друк лишиться в задачі як «перервано» — краще так, ніж помилково «готово».</li>
+    <li><b>Принтер змінив IP</b> — у журналі може з'явитись «Not authorized — перевірте access code», хоча код
+      правильний. Див. <a href="maintenance.html#ip">«Принтери змінили IP»</a>.</li>
+  </ul>
+  <h3>Klipper і PrusaLink</h3>
+  <ul>
+    <li>Не перевірено на живих принтерах. Відомі з тестів підозри: зупинка друку з ферми може записатись як
+      «завершено»; зміна філаменту на Prusa (M600) — як помилка.</li>
+    <li>Klipper не повідомляє тип і колір філаменту; PrusaLink — лише тип.</li>
+  </ul>
+  <h3>Облік і аналітика</h3>
+  <ul>
+    <li>Пластик і години — за даними слайсера з файлу задачі, не за фактом: перерваний друк рахується як повний,
+      скасований посеред друку — не рахується.</li>
+    <li>Друки «поза задачами» видно в списку, але в аналітику вони не входять.</li>
+  </ul>
+  <h3>Інтерфейс і мережа</h3>
+  <ul>
+    <li>Верхня панель на екранах вужчих за 1280 px не вміщається повністю.</li>
+    <li>Ферма працює по HTTP і розрахована лише на локальну мережу. <b>Не відкривайте її в інтернет</b> напряму,
+      без VPN.</li>
+    <li>Сповіщення приходять лише у відкритий браузер.</li>
+  </ul>
+</main>
+
+<footer class="site-footer"><div class="wrap">
+  <p>PrintFarm · Розроблено Басом для друкарів вільного світу. Не постачається в рашку.</p>
+  <p>Назви Bambu Lab, Creality, Qidi, Prusa — торгові марки їхніх власників; PrintFarm з ними не пов'язаний.</p>
+</div></footer>
+</body>
+</html>

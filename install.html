@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Встановлення — PrintFarm</title>
+<meta name="description" content="Покрокове встановлення PrintFarm на Linux-комп'ютер ферми: вимоги, пакет .deb, перший вхід, додавання принтерів Bambu Lab, Klipper і Prusa.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header"><div class="wrap">
+  <a class="logo" href="index.html">Print<span>Farm</span></a>
+  <nav class="nav">
+    <a href="index.html">Головна</a>
+    <a href="features.html">Можливості</a>
+    <a class="active" href="install.html">Встановлення</a>
+    <a href="maintenance.html">Обслуговування</a>
+    <a href="status.html">Що працює</a>
+    <a href="roadmap.html">Плани</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <h1>Встановлення</h1>
+  <p class="lead">PrintFarm ставиться як звичайна програма на один комп'ютер у мережі ферми. Далі ним
+    користуються з браузера будь-якого пристрою в тій самій мережі.</p>
+
+  <div class="toc"><strong>Кроки</strong>
+    <a href="#need">Що потрібно</a><a href="#get">Як отримати</a><a href="#install">Встановити</a>
+    <a href="#first">Перший вхід</a><a href="#network">Мережа</a><a href="#printers">Додати принтери</a>
+    <a href="#bambu">Bambu Lab</a><a href="#klipper">Klipper</a><a href="#prusa">Prusa</a><a href="#check">Перевірка</a>
+  </div>
+
+  <h2 id="need">1. Що потрібно</h2>
+  <div class="table"><table>
+    <tr><th></th><th>Вимога</th></tr>
+    <tr><td>Комп'ютер</td><td>Будь-який 64-бітний ПК чи міні-ПК (amd64), що працює цілодобово. Окремий — не той, на якому
+      грають чи працюють.</td></tr>
+    <tr><td>Система</td><td>Ubuntu або Debian з systemd. Перевірено на <b>Ubuntu 26.04 LTS</b>.</td></tr>
+    <tr><td>Мережа</td><td>Той самий роутер чи локальна мережа, що й принтери. Інтернет для роботи не потрібен.</td></tr>
+    <tr><td>Принтери</td><td>Bambu Lab — у режимі <b>LAN Only + Developer Mode</b> (див. <a href="#bambu">нижче</a>).</td></tr>
+    <tr><td>Браузер</td><td>Chrome, Firefox, Safari чи Edge на ПК, ноутбуці чи планшеті.</td></tr>
+  </table></div>
+  <p class="muted">Raspberry Pi 5 і Windows — готуються, див. <a href="roadmap.html">плани</a>.</p>
+
+  <h2 id="get">2. Як отримати пакет</h2>
+  <div class="note info">
+    <p>Пакет <code>printfarm_&lt;версія&gt;_amd64.deb</code> поки видається <b>за запитом</b>: напишіть нам,
+      і ми надішлемо файл та підкажемо з першим запуском.</p>
+    <p><b>Контакт:</b> <!-- TODO: контакт — рішення користувача ще не прийнято --> <i>буде додано</i></p>
+  </div>
+
+  <h2 id="install">3. Встановити</h2>
+  <ol class="steps">
+    <li>Покладіть файл пакета в теку <code>/tmp</code> (з домашньої теки теж працює, але система друкує зайве
+      попередження про права — це не помилка).</li>
+    <li>Відкрийте термінал і виконайте:
+      <pre><code>sudo apt install /tmp/printfarm_&lt;версія&gt;_amd64.deb</code></pre>
+      Важливо: повний шлях до файлу (або <code>./</code> на початку). Без нього <code>apt</code> шукатиме пакет в
+      інтернеті. Система сама доставить усе потрібне, зокрема <code>ffmpeg</code> для камер.</li>
+    <li><b>Без терміналу:</b> подвійний клік по файлу → Центр застосунків → «Встановити» (пароль користувача).
+      Попередження «Потенційно небезпечно» / «Невідомий видавець» Центр показує для будь-якого пакета не з
+      репозиторію Ubuntu.</li>
+  </ol>
+  <p>Що зробила установка:</p>
+  <ul>
+    <li>служба <code>printfarm</code> — запущена й стартує сама після перезавантаження комп'ютера, перезапускається
+      після збою;</li>
+    <li>окремий системний користувач <code>printfarm</code> без входу в систему;</li>
+    <li>каталоги даних і налаштувань (див. <a href="maintenance.html#where">«Де що лежить»</a>);</li>
+    <li>ярлик <b>«PrintFarm»</b> у меню програм;</li>
+    <li>якщо увімкнений файрвол <code>ufw</code> — відкрито порт інтерфейсу <code>3000/tcp</code> і
+      <code>2021/udp</code> (автопошук принтерів Bambu). Вимкнений файрвол пакет не чіпає.</li>
+  </ul>
+
+  <h2 id="first">4. Перший вхід</h2>
+  <ol class="steps">
+    <li>Відкрийте в браузері <code>http://localhost:3000</code> на цьому комп'ютері або ярлик «PrintFarm» у меню.
+      З інших пристроїв — <code>http://&lt;IP-комп'ютера&gt;:3000</code>.</li>
+    <li>Перший екран — <b>створення адміністратора</b>. Запишіть логін і пароль. Забули — його можна скинути
+      командою (<a href="maintenance.html#password">«Забули пароль»</a>).</li>
+    <li><b>Налаштування → Користувачі</b> — додайте операторів. Оператор бачить усю щоденну роботу, але не
+      налаштування.</li>
+    <li><b>Налаштування → Стелажі</b> — за бажанням: стелажі дають код місця (A23) на картках і в сповіщеннях.</li>
+  </ol>
+
+  <h2 id="network">5. Мережа й час</h2>
+  <ul>
+    <li><b>Закріпіть IP-адреси</b> принтерів і комп'ютера ферми в роутері (DHCP reservation). Якщо роутер після
+      перезавантаження роздасть нові адреси, ферма шукатиме принтери за старими. Як це виправити, якщо вже
+      сталося, — <a href="maintenance.html#ip">«Принтери змінили IP»</a>.</li>
+    <li><b>Часова зона.</b> Дні в аналітиці рахуються за часовою зоною комп'ютера. Перевірити:
+      <code>timedatectl</code> (рядок <code>Time zone</code>). Виправити:
+      <pre><code>sudo timedatectl set-timezone Europe/Kyiv
+sudo systemctl restart printfarm</code></pre></li>
+    <li><b>Інший порт</b> замість 3000 — <a href="maintenance.html#port">«Змінити порт»</a>.</li>
+  </ul>
+
+  <h2 id="printers">6. Додати принтери</h2>
+  <p><b>Налаштування → Принтери → Додати.</b> Завжди потрібні назва, модель і IP-адреса принтера. Решта полів
+    залежить від бренду — форма сама покаже, що потрібно. Після збереження ферма підключається одразу; якщо
+    принтер недосяжний — за ~30 с він стане «офлайн» і повернеться сам, щойно з'явиться в мережі.</p>
+  <div class="note warn"><p><b>Один принтер — одна ферма.</b> Не підключайте той самий принтер одночасно до
+    двох копій PrintFarm чи до іншої програми керування фермою: друга програма бачить ті самі друки і може
+    приписати їх собі.</p></div>
+
+  <h3 id="bambu">Bambu Lab</h3>
+  <ol class="steps">
+    <li>На екрані принтера, у налаштуваннях мережі, увімкніть <b>LAN Only</b>, а потім <b>Developer Mode</b>
+      (назви пунктів трохи відрізняються в різних прошивках). Без Developer Mode ферма бачить стан принтера, але
+      запуск друку принтер відхилить з кодом <code>0x05024007</code>.</li>
+    <li>Там же — <b>Access Code</b> (8 символів).</li>
+    <li><b>Серійний номер</b> — у налаштуваннях принтера (інформація про пристрій) або на наклейці. У формі
+      ферми є кнопка автопошуку серійника — вона працює, коли комп'ютер і принтер в одній підмережі.</li>
+    <li>Введіть IP, Access Code і серійник → «Зберегти».</li>
+  </ol>
+  <p class="muted">Хибний серійник виглядає як «офлайн» приблизно через 30 с. Хибний Access Code — запис
+    <code>Not authorized</code> у <a href="maintenance.html#logs">журналі</a>.</p>
+
+  <h3 id="klipper">Creality K1 / K1 Max, Qidi Q2 (Klipper · Moonraker)</h3>
+  <p>Достатньо IP-адреси. API Key Moonraker — лише якщо на принтері увімкнена авторизація. Тип і колір філаменту
+    з принтера не приходять — вказуються вручну.</p>
+
+  <h3 id="prusa">Prusa CORE One (PrusaLink)</h3>
+  <p>IP-адреса і API Key: на принтері — Settings → Network → Login credentials.</p>
+
+  <h2 id="check">7. Перевірка</h2>
+  <ol class="steps">
+    <li>На дашборді принтери мають стати «готовий» (або «друкує», якщо зараз друкують).</li>
+    <li>Створіть тестове замовлення й задачу з невеликим файлом, відправте на один принтер.</li>
+    <li>Якщо щось не так — подивіться <a href="maintenance.html#logs">журнал</a> і
+      <a href="maintenance.html#problems">типові проблеми</a>.</li>
+  </ol>
+</main>
+
+<footer class="site-footer"><div class="wrap">
+  <p>PrintFarm · Розроблено Басом для друкарів вільного світу. Не постачається в рашку.</p>
+  <p>Назви Bambu Lab, Creality, Qidi, Prusa — торгові марки їхніх власників; PrintFarm з ними не пов'язаний.</p>
+</div></footer>
+</body>
+</html>

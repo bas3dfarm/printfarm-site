@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Обслуговування — PrintFarm</title>
+<meta name="description" content="Як працювати з PrintFarm після встановлення: журнал подій, оновлення, бекапи, відновлення пароля, зміна IP принтерів, типові проблеми.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header"><div class="wrap">
+  <a class="logo" href="index.html">Print<span>Farm</span></a>
+  <nav class="nav">
+    <a href="index.html">Головна</a>
+    <a href="features.html">Можливості</a>
+    <a href="install.html">Встановлення</a>
+    <a class="active" href="maintenance.html">Обслуговування</a>
+    <a href="status.html">Що працює</a>
+    <a href="roadmap.html">Плани</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <h1>Обслуговування</h1>
+  <p class="lead">Усе, що знадобиться після встановлення: де лежать дані, як читати журнал, оновлювати,
+    робити бекап і що робити, коли щось пішло не так. Команди виконуються в терміналі комп'ютера ферми.</p>
+
+  <div class="toc"><strong>На сторінці</strong>
+    <a href="#where">Де що лежить</a><a href="#service">Служба</a><a href="#logs">Журнал</a>
+    <a href="#update">Оновлення</a><a href="#backup">Бекапи</a><a href="#password">Забули пароль</a>
+    <a href="#ip">Принтери змінили IP</a><a href="#port">Змінити порт</a><a href="#switches">Аварійні перемикачі</a>
+    <a href="#problems">Типові проблеми</a><a href="#remove">Видалення</a>
+  </div>
+
+  <h2 id="where">Де що лежить</h2>
+  <div class="table"><table>
+    <tr><th>Шлях</th><th>Що</th></tr>
+    <tr><td><code>/opt/printfarm/</code></td><td>програма — не редагувати, замінюється при оновленні</td></tr>
+    <tr><td><code>/etc/printfarm/config.env</code></td><td>налаштування (порт тощо); оновлення його не перетирає</td></tr>
+    <tr><td><code>/var/lib/printfarm/</code></td><td>дані: база <code>printfarm.db</code>, файли задач <code>uploads/</code>, бекапи <code>backups/</code></td></tr>
+    <tr><td>журнал systemd</td><td>журнал подій сервера: <code>journalctl -u printfarm</code></td></tr>
+  </table></div>
+  <p>Каталог даних доступний лише службі: у базі — Access Code принтерів і хеші паролів.</p>
+
+  <h2 id="service">Служба</h2>
+  <pre><code>systemctl status printfarm          # працює? скільки пам'яті, з якого часу
+sudo systemctl restart printfarm    # перезапуск (після зміни config.env)</code></pre>
+  <p><b>Принтери друкують самі.</b> Перезапуск, оновлення чи перезавантаження комп'ютера ферми друк не
+    зупиняють: після старту сервер підхоплює поточні друки й продовжує їх облік.</p>
+
+  <h2 id="logs">Журнал подій</h2>
+  <p>Журнал — перше місце, куди дивитись, коли принтер «офлайн», задача не відправилась чи камера не
+    показує. Сервер пише туди кожну зміну стану принтера, відправку друку і помилки.</p>
+
+  <h3>Основні команди</h3>
+  <pre><code>journalctl -u printfarm -f                    # наживо (вийти — Ctrl+C)
+journalctl -u printfarm -n 200 --no-pager     # останні 200 рядків
+journalctl -u printfarm -b                    # з останнього завантаження комп'ютера
+journalctl -u printfarm --since "1 hour ago"  # за останню годину
+journalctl -u printfarm --since "2026-11-20 08:00" --until "2026-11-20 12:00"</code></pre>
+
+  <h3>Знайти потрібне</h3>
+  <pre><code>journalctl -u printfarm --since today | grep "X1C-08"          # усе про один принтер (за назвою)
+journalctl -u printfarm --since today | grep -E "❌|⚠️"          # лише помилки й попередження
+journalctl -u printfarm --since today | grep "не відправлено"   # чому задача не пішла на принтер</code></pre>
+
+  <h3>Як читати</h3>
+  <p>Кожен рядок починається зі значка — за ним легко пробігти очима.</p>
+  <div class="table"><table>
+    <tr><th>Значок</th><th>Що означає</th></tr>
+    <tr><td>🖨</td><td>принтер змінив стан (друкує → пауза тощо)</td></tr>
+    <tr><td>📶 / 📴</td><td>принтер з'явився в мережі / пропав з мережі</td></tr>
+    <tr><td>📤</td><td>друк відправлено на принтер</td></tr>
+    <tr><td>✅</td><td>друк завершено або принтер повернуто в роботу</td></tr>
+    <tr><td>⏸ / ▶</td><td>друк перервано / продовжено (наприклад, принтер повернувся з тим самим друком)</td></tr>
+    <tr><td>🔁 / 🔄</td><td>повтор друку з екрана принтера зараховано до задачі / перезапуск друку</td></tr>
+    <tr><td>📋</td><td>друк «поза задачами» — запущений повз ферму</td></tr>
+    <tr><td>🔧</td><td>принтер переведено в режим сервісу</td></tr>
+    <tr><td>📷 / 🎞</td><td>камера: увімкнено, закрито, відмова / знайдено <code>ffmpeg</code></td></tr>
+    <tr><td>🧹</td><td>нічне обслуговування: бекап, прибирання старих файлів і журналів</td></tr>
+    <tr><td>🔔</td><td>сповіщення, яке отримав оператор</td></tr>
+    <tr><td>⏳</td><td>принтер довго не відповідає на відправку; якщо так і не відповів — запис з порадою перевірити принтер і відправити знову</td></tr>
+    <tr><td>⚠️</td><td>попередження: задачу пропущено чи не відправлено (з причиною), причина паузи принтера</td></tr>
+    <tr><td>❌</td><td>помилка — варто розібратись</td></tr>
+  </table></div>
+
+  <h3>Що часто трапляється в журналі</h3>
+  <div class="table"><table>
+    <tr><th>Запис</th><th>Що це і що робити</th></tr>
+    <tr><td><code>Not authorized</code></td><td>Bambu: невірний Access Code, або за цією адресою тепер інший принтер —
+      див. <a href="#ip">«Принтери змінили IP»</a>.</td></tr>
+    <tr><td><code>ECONNREFUSED</code>, <code>EHOSTUNREACH</code></td><td>за адресою немає принтера: вимкнений або змінив IP.</td></tr>
+    <tr><td><code>ENETUNREACH</code> одразу після перезавантаження</td><td>сервер стартував раніше, ніж мережа. Через кілька
+      секунд підключиться сам — не помилка.</td></tr>
+    <tr><td><code>0x05024007</code></td><td>Bambu відхилив друк: увімкніть на принтері LAN Only + Developer Mode.</td></tr>
+    <tr><td><code>spawn ffmpeg ENOENT</code>, <code>ffmpeg не знайдено</code></td><td>для камер X1 / H2 потрібен ffmpeg:
+      <code>sudo apt install ffmpeg</code> і перезапуск.</td></tr>
+  </table></div>
+
+  <h3>Надіслати журнал для допомоги</h3>
+  <pre><code>journalctl -u printfarm --since "2 hours ago" --no-pager &gt; ~/printfarm-log.txt</code></pre>
+  <p>Файл <code>printfarm-log.txt</code> з'явиться в домашній теці. Паролів і Access Code у журналі немає, але
+    там є назви принтерів, файлів і IP-адреси вашої мережі.</p>
+
+  <h2 id="update">Оновлення</h2>
+  <p>Новий файл пакета ставиться тією самою командою поверх старого:</p>
+  <pre><code>sudo apt install /tmp/printfarm_&lt;нова-версія&gt;_amd64.deb</code></pre>
+  <ul>
+    <li>Перед оновленням пакет сам робить бекап бази (у виводі: <code>✅ Бекап створено: …</code>). Не вдалося —
+      оновлення скасовується, стара версія працює далі.</li>
+    <li>Ферма недоступна ~5 секунд. Дані, принтери, налаштування й вхід лишаються — заново входити не треба.</li>
+    <li><b>Коли ставити:</b> у момент, коли мало активних друків. Друки не зупиняться, але так простіше
+      перевірити, що все гаразд.</li>
+    <li><b>Після оновлення</b> перевірте:
+      <pre><code>dpkg -l printfarm | tail -1                  # яка версія стоїть
+systemctl status printfarm --no-pager        # служба працює
+journalctl -u printfarm -n 50 --no-pager     # немає ❌ після старту</code></pre></li>
+    <li><b>Відкат:</b> база оновлюється лише вперед, тож повернення до старої версії — це стара версія пакета плюс
+      база з бекапу, зробленого перед оновленням. Якщо знадобиться — напишіть нам, допоможемо.</li>
+  </ul>
+
+  <h2 id="backup">Бекапи</h2>
+  <ul>
+    <li><b>Автоматично:</b> щодня о 00:15 у <code>/var/lib/printfarm/backups/</code>, зберігаються останні 14; плюс
+      перед кожним оновленням.</li>
+    <li><b>Вручну</b> (перед ризиковою дією):
+      <pre><code>sudo runuser -u printfarm -- sh -c 'set -a; . /etc/printfarm/config.env; set +a; exec /opt/printfarm/node/bin/node /opt/printfarm/backup-db.js'
+sudo ls -lt /var/lib/printfarm/backups | head -3</code></pre></li>
+    <li><b>Копія поза комп'ютером.</b> Бекапи лежать на тому самому диску. Якщо диск помре — пропадуть разом з
+      базою. Періодично копіюйте теку <code>backups</code> на флешку чи інший комп'ютер:
+      <pre><code>sudo cp -r /var/lib/printfarm/backups ~/printfarm-backups</code></pre></li>
+  </ul>
+
+  <h2 id="password">Забули пароль</h2>
+  <pre><code>sudo printfarm-reset-password            # якщо адміністратор один (кілька — підкаже логіни)
+sudo printfarm-reset-password &lt;логін&gt;    # конкретний користувач</code></pre>
+  <p>Команда друкує тимчасовий пароль; вхід цього користувача в усіх браузерах скинуто. Увійдіть з ним і задайте
+    свій: меню користувача (вгорі праворуч) → «Змінити пароль».</p>
+
+  <h2 id="ip">Принтери змінили IP</h2>
+  <p><b>Ознака:</b> після перезавантаження роутера чи відключення світла більшість Bambu «офлайн», у журналі
+    <code>Not authorized</code> або <code>ECONNREFUSED</code>. Роутер роздав нові адреси, а ферма стукає на старі.</p>
+  <pre><code>sudo printfarm-find-printers            # лише показати: хто де і що змінити
+sudo printfarm-find-printers --apply    # змінити IP (спитає логін і пароль адміністратора ферми)</code></pre>
+  <ul>
+    <li>Принтер впізнається за серійним номером — команд принтерам не шле.</li>
+    <li>«Нова адреса … ще за іншим принтером» — той принтер вимкнений або не знайдений: змініть його IP в
+      інтерфейсі і запустіть команду ще раз.</li>
+    <li>«Двічі в базі» — той самий принтер доданий двома записами: видаліть зайвий в інтерфейсі.</li>
+    <li>Принтери в іншій підмережі: <code>sudo printfarm-find-printers --subnet 192.168.2</code> (перші три числа їхньої адреси).</li>
+    <li><b>Щоб не повторювалось</b> — закріпіть адреси в роутері (DHCP reservation).</li>
+  </ul>
+
+  <h2 id="port">Змінити порт</h2>
+  <pre><code>sudo nano /etc/printfarm/config.env   # рядок PORT=3100 (від 1024 до 65535)
+sudo systemctl restart printfarm</code></pre>
+  <p>Ярлик у меню підхопить новий порт сам. Якщо увімкнений <code>ufw</code> — відкрийте порт:
+    <code>sudo ufw allow 3100/tcp</code>.</p>
+
+  <h2 id="switches">Аварійні перемикачі</h2>
+  <p>Деякі нові функції можна вимкнути без повернення до старої версії: дописати рядок у
+    <code>/etc/printfarm/config.env</code> і перезапустити службу.</p>
+  <div class="table"><table>
+    <tr><th>Рядок</th><th>Коли знадобиться</th></tr>
+    <tr><td><code>PRINTFARM_3MF_TITLE=off</code></td><td>якась модель Bambu після оновлення відмовляється друкувати файл з
+      ферми. Повтори з екрана X1C тоді знову підуть у «поза задачами».</td></tr>
+    <tr><td><code>PRINTFARM_BAMBU_PROBLEM=off</code> <span class="tag next">наступна версія</span></td><td>причина паузи Bambu показується неправильно чи заважає. Пауза
+      буде без коду й тексту, як раніше.</td></tr>
+    <tr><td><code>PRINTFARM_BAMBU_ACTIONS=off</code> <span class="tag next">наступна версія</span></td><td>кнопки в блоці «Причина паузи» поводяться не так. Повернеться
+      проста кнопка «Відновити друк».</td></tr>
+  </table></div>
+
+  <h2 id="problems">Типові проблеми</h2>
+  <h3>Сторінка не відкривається з іншого комп'ютера</h3>
+  <p>Увімкнений файрвол без правила для порту (<code>sudo ufw status</code>; відкрити —
+    <code>sudo ufw allow 3000/tcp</code>) або змінено порт у <code>config.env</code>.</p>
+  <h3>Після встановлення не заходить по SSH / віддаленому робочому столу</h3>
+  <p>Якщо <code>ufw</code> закриває вхідні з'єднання, пакет відкриває лише свої порти. Дозвольте SSH з локальної
+    мережі (підмережа — ваша):</p>
+  <pre><code>sudo ufw allow from 192.168.1.0/24 to any port 22 proto tcp comment 'SSH (LAN)'</code></pre>
+  <p>Так само порт <code>3389</code> для RDP. Зробіть це до того, як від'єднаєте від комп'ютера монітор.</p>
+  <h3>Safari на Mac відкриває ферму, а Chrome — ні</h3>
+  <p>macOS не дав Chrome доступу до локальної мережі: Системні параметри → Конфіденційність і безпека →
+    Локальна мережа → увімкнути Google Chrome і перезапустити його.</p>
+  <h3>Служба не стартує</h3>
+  <p><code>journalctl -u printfarm -b</code>. Найчастіше порт зайнятий іншою програмою
+    (<code>sudo ss -ltnp | grep :3000</code>) — змініть <code>PORT</code> у <code>config.env</code>.</p>
+  <h3>Принтер не підключається</h3>
+  <ul>
+    <li><b>Bambu:</b> перевірте Access Code і серійник; для друку з ферми — LAN Only + Developer Mode.</li>
+    <li><b>Klipper:</b> IP; API Key — лише якщо увімкнена авторизація Moonraker.</li>
+    <li><b>Prusa:</b> IP і API Key.</li>
+  </ul>
+  <h3>Камера не показує</h3>
+  <p>На старті в журналі має бути рядок <code>🎞 ffmpeg: …</code>. Немає — <code>sudo apt install ffmpeg</code> і
+    перезапуск. P1 / A1 і Klipper-принтери ffmpeg не потребують.</p>
+  <h3>Нічні друки потрапляють у вчорашній день</h3>
+  <p>Неправильна часова зона комп'ютера — див. <a href="install.html#network">«Мережа й час»</a>.</p>
+
+  <h2 id="remove">Видалення</h2>
+  <pre><code>sudo apt remove printfarm   # прибрати програму; дані, налаштування й історія лишаються
+sudo apt purge printfarm    # прибрати ВСЕ: базу, файли задач, бекапи, налаштування</code></pre>
+  <p>Після <code>remove</code> повторне встановлення продовжить з тими самими принтерами й історією.
+    <code>purge</code> — <b>незворотно</b>: спершу скопіюйте бекапи (див. <a href="#backup">«Бекапи»</a>).</p>
+</main>
+
+<footer class="site-footer"><div class="wrap">
+  <p>PrintFarm · Розроблено Басом для друкарів вільного світу. Не постачається в рашку.</p>
+  <p>Назви Bambu Lab, Creality, Qidi, Prusa — торгові марки їхніх власників; PrintFarm з ними не пов'язаний.</p>
+</div></footer>
+</body>
+</html>
